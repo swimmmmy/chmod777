@@ -125,30 +125,28 @@ PNT 정보 왜곡
 ## 단계별 흐름
 
 ```
-① GNSS 수신 환경에 지연 신호 유입
+① GNSS 신호 지연(Meaconing)
 
           ↓
 
-② 수신기가 정상 GNSS 신호로 판단
+② Timing(T) 정보에 미세한 오차 발생
 
           ↓
 
-③ Timing(T) 정보에 미세한 오차 발생
+③ ΔR = c × Δt
+   (거리 계산 오류)
 
           ↓
 
-④ ΔR = c × Δt
-   (거리 계산 오류 발생)
+④ Position(Positioning) 오차 발생
 
           ↓
 
-⑤ Position(Positioning) 및 Navigation 정보 오류 발생
+⑤ Navigation(항법) 오류 발생
 
           ↓
 
-⑥ PNT 기반 시스템의 연쇄적인 운용 오류 발생
-```
-ΔR = c × Δt
+⑥ PNT 기반 시스템의 연쇄적인 운용 오류
 ```
 
 * ΔR : 거리 오차
