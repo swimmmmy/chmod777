@@ -1,6 +1,6 @@
 # GNSS 미코닝(Meaconing) 및 Pseudolite 기반 PNT 기만 시나리오
 
-# 최종 주제
+# Topic
 
 **"GNSS 신호 물리적 시간 지연(Meaconing)을 통한 Timing(T) 정보 교란이 PNT(Position, Navigation, Timing)에 미치는 영향 분석"**
 
@@ -8,7 +8,7 @@
 
 ---
 
-# 팀 구성
+# Team
 
 * 박대범
 * 진민교
@@ -16,9 +16,9 @@
 
 ---
 
-# 관련 개념
+# Background
 
-## PNT란?
+## PNT?
 
 **P**ositioning(위치) + **N**avigation(항법) + **T**iming(시각)
 
@@ -34,7 +34,7 @@
 
 ---
 
-## GNSS란?
+## GNSS?
 
 GNSS(Global Navigation Satellite System)는 위성을 이용하여 PNT 정보를 제공하는 위성항법 시스템의 총칭이다.
 
@@ -113,7 +113,7 @@ PNT 정보 왜곡
 
 ---
 
-# 공격 시나리오
+# Scenario
 
 ## 가정
 
