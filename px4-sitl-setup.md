@@ -1,6 +1,6 @@
 # PX4 SITL + QGroundControl 실증 환경 구축 (VMware Ubuntu)
 
-[실증 방법](../README.md#실증-방법)의 1단계(정상 비행 확인) 환경 구축 과정과, VMware Ubuntu에서 재현 시 필요한 절차를 정리한 문서이다.
+[실증 방법](../README.md#실증-방법) 1단계(정상 비행 확인)를 준비하면서 겪은 과정을 정리했다. 원래는 WSL로 진행했는데 Docker–QGroundControl 네트워크 연결이 계속 불안정해서, VMware Ubuntu Desktop 환경으로 옮겨서 다시 진행했다. 여러 번 시행착오를 겪었지만 결국 연결에 성공했고, 그 과정에서 알게 된 원인들을 같이 정리해둔다. 다음에 같은 걸 하는 팀원이 있으면 이 순서를 그대로 따라가면 된다.
 
 ## 목차
 
@@ -23,7 +23,7 @@
 | PX4 이미지 | `jonasvautherin/px4-gazebo-headless` |
 | QGroundControl | Daily build (AppImage, x86_64) |
 
-> 초기 2코어/4GB로는 Gazebo 물리 시뮬레이션이 CPU를 따라가지 못해 `Accel #0 fail: TIMEOUT` 오류가 반복됨. 4코어/8GB 이상으로 증설 후 안정화됨.
+처음엔 VM을 2코어/4GB로 시작했는데, PX4랑 QGC를 같이 켜니까 CPU가 못 버텨서 `Accel #0 fail: TIMEOUT` 에러가 계속 났다. 4코어/8GB로 늘리고 나서야 안정적으로 돌아갔다.
 
 ---
 
@@ -53,7 +53,7 @@ wget https://d176tv9ibo4jno.cloudfront.net/builds/master/QGroundControl-x86_64.A
 chmod +x QGroundControl-x86_64.AppImage
 ```
 
-> 예전에 흔히 쓰이던 `latest/QGroundControl.AppImage` 링크는 현재 403 Forbidden으로 막혀 있다. 위 `builds/master/` 경로를 사용해야 한다.
+예전에 많이 쓰던 `latest/QGroundControl.AppImage` 링크는 지금 403 Forbidden으로 막혀 있다. 위의 `builds/master/` 경로로 받아야 한다.
 
 ---
 
@@ -67,7 +67,12 @@ docker run --rm -it --network host \
   jonasvautherin/px4-gazebo-headless
 ```
 
-`pxh>` 프롬프트가 뜰 때까지 대기한다. (좌표는 충청권 기준으로 설정)
+- `--rm` : 컨테이너 종료 시 자동 삭제 (테스트용이라 여러 번 켰다 껐다 하니까 안 지우면 계속 쌓임)
+- `--network host` : 컨테이너가 VM의 네트워크를 그대로 공유하게 함. 원래는 `-p 14550:14550/udp`처럼 포트만 매핑하는 방식으로 했는데, 그러면 Docker의 포트 포워딩 프로세스가 포트를 독점해버려서 QGC가 못 들어옴. 이 옵션으로 그 문제를 우회함
+- `-e PX4_HOME_LAT/LON/ALT` : 드론이 출발할 위치(위도/경도/고도). 충청권 좌표로 설정
+- `jonasvautherin/px4-gazebo-headless` : PX4 + Gazebo가 미리 세팅된 Docker 이미지 이름
+
+`pxh>` 프롬프트가 뜰 때까지 기다린다.
 
 **2. PX4 콘솔에서 통신 설정** (`pxh>`에 순서대로 입력)
 
@@ -77,7 +82,17 @@ mavlink stop-all
 mavlink start -x -u 14555 -r 4000000 -t 127.0.0.1 -o 14550
 ```
 
-**3. QGroundControl 실행** (터미널 2)
+- `param set MAV_0_BROADCAST 1` : PX4는 기본적으로 MAVLink 신호를 컨테이너 안(localhost)에서만 유지하도록 되어 있다. 이 값을 1로 켜야 밖으로도 신호가 나간다.
+- `mavlink stop-all` : 기존에 돌던 MAVLink 채널을 전부 종료. 새 설정을 적용하려면 한 번 꺼야 한다.
+- `mavlink start -x -u 14555 -r 4000000 -t 127.0.0.1 -o 14550` : MAVLink를 새로 시작하는 명령.
+  - `-u 14555` : PX4가 자기 쪽에서 쓰는 로컬 포트
+  - `-r 4000000` : 데이터 전송 속도(byte/s)
+  - `-t 127.0.0.1` : 신호를 보낼 대상 IP (여기선 같은 VM 안이니 자기 자신)
+  - `-o 14550` : 목적지 포트. QGC가 리스닝할 포트를 여기로 지정
+
+  PX4와 QGC가 같은 14550 포트를 동시에 열려고(bind) 하면 충돌이 나서, PX4는 14555에서 보내고 QGC는 14550에서 받도록 포트를 나눈 것이 핵심이다.
+
+**3. QGroundControl 실행** (터미널 2, 새 창)
 
 ```bash
 ./QGroundControl-x86_64.AppImage
@@ -85,8 +100,8 @@ mavlink start -x -u 14555 -r 4000000 -t 127.0.0.1 -o 14550
 
 **4. 연결 확인**
 
-자동연결이 되지 않으면 수동으로 링크를 생성한다.
-QGC 좌상단 `Disconnected` 클릭 → Comm Links → Add → Type: UDP, Listening Port: `14550` → Save → Connect
+자동으로 연결되면 좋고, 안 되면 수동으로 링크를 만든다.
+QGC 좌상단 `Disconnected` 클릭 → Comm Links → Add → Type: `UDP`, Listening Port: `14550` → Save → Connect
 
 **5. 이륙 테스트** (`pxh>`)
 
@@ -94,31 +109,34 @@ QGC 좌상단 `Disconnected` 클릭 → Comm Links → Add → Type: UDP, Listen
 commander takeoff
 ```
 
-QGC 화면 상태가 `Ready` → `Takeoff` → `비행중`으로 전환되고, 위성 개수·배터리·좌표가 표시되면 정상 비행 확인 단계가 완료된 것이다.
+QGC 화면 상태가 `Ready` → `Takeoff` → `비행중`으로 바뀌고, 위성 개수·배터리·좌표가 표시되면 성공이다.
+
+![이륙 성공 화면](takeoff_success.png)
+> PX4 콘솔에서 `commander takeoff` 실행 후, QGC에서 "비행중 / Takeoff" 상태로 전환되고 위성 10개, 배터리 94%, 실제 좌표(충청권)가 지도 위에 표시되는 것까지 확인한 화면.
 
 ---
 
 ## 문제 원인과 해결
 
-기본 설정(`docker run -p 14550:14550/udp`)으로는 QGC와 PX4가 연결되지 않았다. 원인을 역추적한 과정은 다음과 같다.
+처음에 `docker run -p 14550:14550/udp` 방식으로 시도했을 때는 QGC가 계속 "Disconnected" 상태였다. 몇 시간에 걸쳐 원인을 하나씩 좁혀나간 과정은 다음과 같다.
 
 | 증상 | 원인 | 해결 |
 | --- | --- | --- |
-| QGC에서 `UDP Link error: Address already in use` | Docker의 포트 포워딩 프로세스(`docker-pr`)가 포트를 독점(bind)하여, QGC가 같은 포트를 열려는 시도와 충돌 | `--network host`로 컨테이너와 호스트 네트워크를 공유시켜 포트 포워딩 자체를 제거 |
-| `--network host`로도 데이터 미수신 (`tcpdump`로 확인) | PX4 기본 설정상 MAVLink가 localhost 내부로만 제한됨 | `param set MAV_0_BROADCAST 1`로 외부 브로드캐스트 허용 |
-| 여전히 UDP bind 충돌 반복 | PX4와 QGC가 동일 포트(14550)를 동시에 리스닝 시도 (UDP는 한 프로세스만 포트를 열 수 있음) | PX4는 `14555`에서 송신, `-o 14550`으로 QGC가 리스닝하는 `14550`을 목적지로 명시하여 포트 역할 분리 |
-| `Accel #0 fail: TIMEOUT` 반복, Failsafe 발동 | VM(2코어/4GB)에서 Gazebo 물리 연산이 CPU를 따라가지 못함 | VM을 4코어/8GB로 증설. 완전히 해소되지는 않으나 이륙 직후 수 분간은 안정적으로 동작 |
+| QGC에서 `UDP Link error: Address already in use` | Docker의 포트 포워딩 프로세스(`docker-pr`)가 포트를 독점(bind)해서, QGC가 같은 포트를 열려는 시도와 충돌 | `--network host`로 컨테이너와 호스트 네트워크를 공유시켜 포트 포워딩 자체를 없앰 |
+| `--network host`로 바꿔도 데이터가 안 옴 (`tcpdump`로 확인) | PX4 기본 설정상 MAVLink가 localhost 내부로만 제한됨 | `param set MAV_0_BROADCAST 1`로 외부 브로드캐스트 허용 |
+| 여전히 UDP bind 충돌 반복 | PX4와 QGC가 같은 포트(14550)를 동시에 리스닝하려고 시도 (UDP는 한 프로세스만 포트를 열 수 있음) | PX4는 `14555`에서 송신, `-o 14550`으로 QGC가 리스닝하는 `14550`을 목적지로 명시해서 포트 역할을 분리 |
+| `Accel #0 fail: TIMEOUT` 반복, Failsafe 발동 | VM(2코어/4GB)에서 Gazebo 물리 연산이 CPU를 못 따라감 | VM을 4코어/8GB로 증설. 완전히 없어지진 않지만 이륙 직후 몇 분 동안은 안정적으로 동작함 |
 
-핵심 진단 방법: `sudo tcpdump -i lo -n udp port <포트번호>`로 실제 UDP 트래픽 발생 여부를 직접 확인하는 것이 연결 문제를 좁혀나가는 데 가장 확실했다.
+가장 도움이 됐던 진단 방법은 `sudo tcpdump -i lo -n udp port <포트번호>`로 실제 UDP 트래픽이 오가는지 직접 확인하는 것이었다. 포트가 "열려있다"는 것과 "실제로 데이터가 흐른다"는 건 다른 문제였다.
 
 ---
 
 ## 참고: 트러블슈팅
 
-- Docker 컨테이너가 중복 실행되어 있으면(과거 `-p` 방식 컨테이너와 `--network host` 컨테이너가 동시에 남아있는 경우 등) Gazebo 인스턴스끼리 충돌하며 TIMEOUT을 유발한다. `docker ps -a`로 항상 확인 후 `docker rm -f $(docker ps -aq)`로 정리한다.
-- QGC 프로세스가 창을 닫아도 완전히 종료되지 않고 포트를 계속 점유하는 경우가 있다. `pkill -9 -f QGroundControl`로 강제 종료한다.
-- QGC 설정이 꼬였다고 판단되면 `rm -rf ~/.config/QGroundControl.org`로 초기화 후 재실행한다.
-- VM 하드웨어 설정(Memory/Processors)은 VM이 완전히 꺼진 상태(Powered off)에서만 변경할 수 있다.
+- Docker 컨테이너가 여러 개 겹쳐서 실행되어 있으면(예전 `-p` 방식 컨테이너와 `--network host` 컨테이너가 동시에 남아있는 경우 등) Gazebo 인스턴스끼리 충돌하며 TIMEOUT을 유발한다. `docker ps -a`로 항상 확인하고 `docker rm -f $(docker ps -aq)`로 정리한다.
+- QGC 프로세스가 창을 닫아도 완전히 안 죽고 포트를 계속 물고 있는 경우가 있었다. `pkill -9 -f QGroundControl`로 강제 종료하면 된다.
+- QGC 설정이 꼬였다 싶으면 `rm -rf ~/.config/QGroundControl.org`로 초기화하고 다시 실행한다.
+- VM 하드웨어 설정(Memory/Processors)은 VM이 완전히 꺼진 상태(Powered off)에서만 바꿀 수 있다.
 
 ---
 
