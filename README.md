@@ -52,7 +52,7 @@ GNSS(Global Navigation Satellite System)는 위성을 이용하여 PNT 정보를
 [![GNSS 신호 수신 구조](https://github.com/swimmmmy/chmod777/raw/main/images/gnss_signal1.png)](/swimmmmy/chmod777/blob/main/gnss_signal1.png)
 > 그림 2. GNSS 위성 신호 수신 구조 (Space Segment → User Segment)
  
-[![GNSS 신호 수신 구조 (SBAS 포함)](https://github.com/swimmmmy/chmod777/raw/main/gnss_signal2.png)](/swimmmmy/chmod777/blob/main/images/gnss_signal2.png)
+[![GNSS 신호 수신 구조 (SBAS 포함)](https://github.com/swimmmmy/chmod777/raw/main/gnss_signal2.png)](/swimmmmy/chmod777/blob/main/gnss_signal2.png)
 > 그림 2-1. SBAS 지상기지국을 포함한 GNSS 신호·보정값 흐름 (Space Segment / User Segment / Ground Segment)
  
 **GNSS 신호의 특징**
