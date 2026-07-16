@@ -33,7 +33,7 @@ Readme · MD
 - 지휘통제(C2) 시스템
 그중에서도 **Timing(T)** 은 Position과 Navigation을 계산하는 기준이 되기 때문에, 아주 작은 시간 오차도 전체 PNT 정확도에 영향을 줄 수 있다.
  
-[![PNT 구조도](https://github.com/swimmmmy/chmod777/raw/main/images/pnt_structure.png)](/swimmmmy/chmod777/blob/main/images/pnt_structure.png)
+[![PNT 구조도](https://github.com/swimmmmy/chmod777/raw/main/images/pnt_structure.png)](/swimmmmy/chmod777/blob/main/pnt_structure.png)
 > 그림 1. PNT 시스템 구조도 (GNSS, SBAS, INS 포함)
  
 ---
@@ -49,10 +49,10 @@ GNSS(Global Navigation Satellite System)는 위성을 이용하여 PNT 정보를
 | 유럽  | Galileo | 27      |
 | 중국  | BeiDou  | 35      |
  
-[![GNSS 신호 수신 구조](https://github.com/swimmmmy/chmod777/raw/main/images/gnss_signal1.png)](/swimmmmy/chmod777/blob/main/images/gnss_signal1.png)
+[![GNSS 신호 수신 구조](https://github.com/swimmmmy/chmod777/raw/main/images/gnss_signal1.png)](/swimmmmy/chmod777/blob/main/gnss_signal1.png)
 > 그림 2. GNSS 위성 신호 수신 구조 (Space Segment → User Segment)
  
-[![GNSS 신호 수신 구조 (SBAS 포함)](https://github.com/swimmmmy/chmod777/raw/main/images/gnss_signal2.png)](/swimmmmy/chmod777/blob/main/images/gnss_signal2.png)
+[![GNSS 신호 수신 구조 (SBAS 포함)](https://github.com/swimmmmy/chmod777/raw/main/gnss_signal2.png)](/swimmmmy/chmod777/blob/main/images/gnss_signal2.png)
 > 그림 2-1. SBAS 지상기지국을 포함한 GNSS 신호·보정값 흐름 (Space Segment / User Segment / Ground Segment)
  
 **GNSS 신호의 특징**
